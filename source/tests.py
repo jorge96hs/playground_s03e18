@@ -30,11 +30,18 @@ exclude_features = ['id', 'EC3', 'EC4', 'EC5', 'EC6']
 categorical_features = ['fr_COO', 'fr_COO2']
 numerical_features = [col for col in train_data.columns if col not in target_vars + exclude_features + categorical_features]
 
+train_data['y'] = train_data.apply(
+    lambda x:
+    '-'.join([str(int(x[target_var])) for target_var in target_vars]),
+    axis = 1
+)
+
 # # Train-test split
 X_train, X_test, y_train, y_test = train_test_split(
     train_data[numerical_features + categorical_features],
-    train_data[target_vars].to_numpy(),
-    random_state = 23
+    train_data['y'],
+    random_state = 23,
+    stratify = train_data['y']
 )
 
 # Model
@@ -77,12 +84,7 @@ lgbm_estimator = Pipeline(
         ),
         (
             'lgbm',
-            ClassifierChain(
-                base_estimator = lgb.LGBMClassifier(random_state = 23, is_unbalance = True),
-                order = 'random',
-                cv = cv,
-                random_state = 23
-            )
+            lgb.LGBMClassifier(random_state = 23, is_unbalance = True)
         )
     ]
 )
